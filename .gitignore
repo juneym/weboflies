@@ -1,2 +1,7 @@
 vendor
 tests/reports
+build/logs/
+build/phpcs.xml
+build/phpdox/
+build/phpmd.xml
+cache.properties

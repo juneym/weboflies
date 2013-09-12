@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpunit
+  bootstrap="vendor/autoload.php"
+  printerFile="vendor/whatthejeff/nyancat-phpunit-resultprinter/src/NyanCat/PHPUnit/ResultPrinter.php"
+  printerClass="NyanCat\PHPunit\ResultPrinter">
+  <logging>
+      <log type="coverage-clover" target="../build/logs/clover.xml" />
+      <log type="coverage-html" target="../build/coverage" />
+      <log type="testdox-html" target="../build/phpdox/index.html"/>
+      <log type="testdox-txt" target="../build/phpdox/testdox.txt"/>
+  </logging>
+  <testsuites>
+    <testsuite name="unit">
+       <file>tests/LieMapperTest.php</file>
+       <file>tests/UserMapperTest.php</file>
+    </testsuite> 
+    <testsuite name="integration">
+       <file>tests/LieMapperIntegrationTest.php</file>
+    </testsuite>
+  </testsuites>
+
+  <filter>
+    <blacklist>
+      <directory>../vendor/*</directory>
+      <directory>/home/rmartinez/.composer/*</directory>
+    </blacklist>
+  </filter>
+</phpunit>
