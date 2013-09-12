@@ -115,12 +115,20 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 
 		 */
 
+		$lieArr = array(
+				'id' => uniqid(),
+				'description' => 'Sample Lie Entity #1',
+				'date_created' => time(),
+				'user_id' => uniqid(),
+				'valid' => 1
+			);
+  
 	    $lieExpected = new LieEntity();
-	    $lieExpected->id = uniqid();
-	    $lieExpected->description = "Sample Lie Entity #1";
-	    $lieExpected->date_created = time();
-	    $lieExpected->user_id = uniqid();
-	    $lieExpected->valid   = 1;
+	    $lieExpected->id = $lieArr['id'];
+	    $lieExpected->description = $lieArr['description'];
+	    $lieExpected->date_created = $lieArr['date_created'];
+	    $lieExpected->user_id = $lieArr['user_id'];
+	    $lieExpected->valid   = $lieArr['valid'];
 
 	    $sth = $this->getMockBuilder('stdClass')
 	                ->setMethods(array('execute', 'fetch', 'rowCount'))
@@ -128,7 +136,7 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 
 	    $sth->expects($this->once())
 	        ->method('fetch')
-	        ->will($this->returnValue($lieExpected));
+	        ->will($this->returnValue($lieArr));
 
 	    $sth->expects($this->once())
 	        ->method('rowCount')
@@ -360,8 +368,21 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 	public function createDuplicateRecord() {
 
 
+		$lieArr = array(
+				'id' => uniqid(),
+				'description' => 'Sample Lie',
+				'date_created' => time(),
+				'user_id' => uniqid(),
+				'valid' => 1
+			);
+
 	    $entity = new LieEntity();
-	    $entity->id = uniqid();   
+	    $entity->id = $lieArr['id'];
+	    $entity->description = $lieArr['description'];
+	    $entity->date_created = $lieArr['date_created'];
+	    $entity->user_id = $lieArr['user_id'];
+	    $entity->valid = $lieArr['valid'];
+	    
 
 
 
@@ -375,7 +396,7 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 
 	    $sth1->expects($this->once())
 	        ->method('fetch')
-	        ->will($this->returnValue($entity));
+	        ->will($this->returnValue($lieArr));
 
 	    $db  = $this->getMockBuilder('PDOMock')
 	                ->setMethods(array('prepare'))
@@ -450,5 +471,64 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 	    $this->assertEquals(true, $response, "LieMapper::create() did not return the expected result adding a new record");
 
 	}	
+
+
+
+	/**
+	 * 
+	 *  @test
+	 */
+	public function createANewRecordThatFailedOnInsert() {
+
+
+	    $entity = new LieEntity();
+	    $entity->id = uniqid();   
+	    $entity->description = "This is a sample Lie";
+	    $entity->date_created = time();
+	    $entity->user_id = uniqid();
+	    $entity->valid = true;
+
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount', 'fetch'))
+	                ->getMock();
+
+	    $sth1->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(0));
+
+
+
+	    $sth2 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth2->expects($this->once())
+	         ->method('rowCount')
+	         ->will($this->returnValue(0));
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+
+	    $db->expects($this->at(0))
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id, description, date_created, user_id, valid FROM lies WHERE id'))
+	       ->will($this->returnValue($sth1));
+
+		$db->expects($this->at(1))
+		   ->method('prepare')
+		   ->with($this->stringContains('INSERT INTO lies (id, description, date_created, user_id, valid) VALUES'))
+		   ->will($this->returnValue($sth2));
+
+	    $lieMapper = new LieMapper($db);
+	    $response = $lieMapper->create($entity);
+	    $this->assertEquals(false, $response, "LieMapper::create() did not return the expected result adding a new record that failed during the INSERT");
+
+	}		
 
 }

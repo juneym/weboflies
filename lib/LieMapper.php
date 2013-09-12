@@ -36,7 +36,7 @@ class LieMapper {
 	public function get($id)  
 	{
 
-		$sth = $this->_db->prepare("SELECT id, description, date_created, user_id, valid FROM lies WHERE id = ?");
+		$sth = $this->_db->prepare("SELECT id, description, date_created, user_id, valid FROM lies WHERE id = :id");
 		$sth->execute(array('id' => $id));
 
 		if ($sth->rowCount() == 0) {
@@ -46,11 +46,11 @@ class LieMapper {
 		$row = $sth->fetch();
 
 		$lieEntity = new LieEntity();
-		$lieEntity->id = $row->id;
-		$lieEntity->description = $row->description;
-		$lieEntity->date_created = $row->date_created;
-		$lieEntity->user_id = $row->user_id;
-		$lieEntity->valid = $row->valid;
+		$lieEntity->id           = $row['id'];
+		$lieEntity->description  = $row['description'];
+		$lieEntity->date_created = $row['date_created'];
+		$lieEntity->user_id = $row['user_id'];
+		$lieEntity->valid = $row['valid'];
 
 		return $lieEntity;
 	}
@@ -63,13 +63,13 @@ class LieMapper {
 	public function delete($id)
 	{
 
-		$sth = $this->_db->prepare("SELECT id FROM lies WHERE id = ?");
+		$sth = $this->_db->prepare("SELECT id FROM lies WHERE id = :id");
 		$sth->execute(array('id' => $id));
 		if ($sth->rowCount() == 0) {
 			return false;
 		}
 
-		$sth = $this->_db->prepare("DELETE FROM lies WHERE id = ?");
+		$sth = $this->_db->prepare("DELETE FROM lies WHERE id = :id");
 		$sth->execute(array('id' => $id));
 
 		if ($sth->rowCount() == 0) {
@@ -93,6 +93,7 @@ class LieMapper {
 		$sth = $this->_db->prepare(
 						"INSERT INTO lies (id, description, date_created, user_id, valid) VALUES(?, ?, ?, ?, ?)"
 						);
+
 		$sth->execute(array(
 				$lieEntity->id, 
 				$lieEntity->description,

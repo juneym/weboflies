@@ -12,7 +12,7 @@
        <file>UserMapperTest.php</file>
     </testsuite> 
     <testsuite name="integration">
-       <file>LieEntityTest.php</file>
+       <file>LieMapperIntegrationTest.php</file>
     </testsuite>
   </testsuites>
 </phpunit>
