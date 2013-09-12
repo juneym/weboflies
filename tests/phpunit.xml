@@ -4,7 +4,9 @@
   printerFile="../vendor/whatthejeff/nyancat-phpunit-resultprinter/src/NyanCat/PHPUnit/ResultPrinter.php"
   printerClass="NyanCat\PHPunit\ResultPrinter">
   <logging>
-      <log type="coverage-html" target="reports" />
+      <log type="coverage-html" target="reports-clover" />
+      <log type="testdox-html" target="reports-dox/testdox.html"/>
+      <log type="testdox-txt" target="reports-dox/testdox.txt"/>
   </logging>
   <testsuites>
     <testsuite name="unit">
@@ -15,4 +17,11 @@
        <file>LieMapperIntegrationTest.php</file>
     </testsuite>
   </testsuites>
+
+  <filter>
+    <blacklist>
+      <directory>../vendor/*</directory>
+      <directory>/home/rmartinez/.composer/*</directory>
+    </blacklist>
+  </filter>
 </phpunit>
