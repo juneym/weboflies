@@ -7,6 +7,17 @@ require_once dirname(__DIR__) . '/tests/PDOMock.php';
 class LieMapperTest extends PHPUnit_Framework_TestCase 
 {
 
+
+	/**
+	 *
+	 * @test 
+	 * @expectedException Exception_InvalidDb
+	 */
+	public function checkExceptionIsThrownWhenDbConnectionIsEmpty() {
+
+		$lieMapper = new LieMapper(array());
+	}
+
 	/**
 	 * @test
 	 */
@@ -25,7 +36,7 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 		  $lieInfo = array(
 		  		array(
 		  			'id' => uniqid(),
-		  			'date' => time(),
+		  			'date_created' => time(),
 		  			'description' => 'First test lie',
 		  			'user_id' => uniqid(),
 		  			'valid' => 1
@@ -33,7 +44,7 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 
 		  		array(
 		  			'id' => uniqid(),
-		  			'date' => time(),
+		  			'date_created' => time(),
 		  			'description' => 'Second test lie',
 		  			'user_id' => uniqid(),
 		  			'valid' => 1
@@ -41,7 +52,7 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 		  		
 		  		array(
 		  			'id' => uniqid(),
-		  			'date' => time(),
+		  			'date_created' => time(),
 		  			'description' => 'Third test lie',
 		  			'user_id' => uniqid(),
 		  			'valid' => 0
@@ -58,7 +69,7 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 
 		  foreach ($lieInfo as $idx => $details) {
 		  	$expectedLies[$idx]->id = $details['id'];
-		  	$expectedLies[$idx]->date = $details['date'];
+		  	$expectedLies[$idx]->date_created = $details['date_created'];
 		  	$expectedLies[$idx]->description = $details['description'];
 		  	$expectedLies[$idx]->user_id = $details['user_id'];
 		  	$expectedLies[$idx]->valid = $details['valid'];
@@ -79,9 +90,8 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 
 		  $db->expects($this->once())
 		     ->method('prepare')
-		     ->with($this->stringContains('SELECT id, description, date, user_id, valid FROM lies'))
+		     ->with($this->stringContains('SELECT id, description, date_created, user_id, valid FROM lies'))
 		     ->will($this->returnValue($sth));
-
 
 		   $lieMapper = new LieMapper($db);
 		   $lies      = $lieMapper->getAll();
@@ -89,5 +99,356 @@ class LieMapperTest extends PHPUnit_Framework_TestCase
 		   					  $lies,
 		   					  "LieMapper::getAll() did not return expected collection");
 	}
+
+
+	/**
+	 * 
+	 * @test
+	 */
+	public function returnASingleLieRecordForKnownRecord() 
+	{
+
+		/*
+			Given a lie entity record,
+			when I call the get(id) method of the LieMapper to get a specific record,
+			I should be able to get the same lie entity.
+
+		 */
+
+	    $lieExpected = new LieEntity();
+	    $lieExpected->id = uniqid();
+	    $lieExpected->description = "Sample Lie Entity #1";
+	    $lieExpected->date_created = time();
+	    $lieExpected->user_id = uniqid();
+	    $lieExpected->valid   = 1;
+
+	    $sth = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'fetch', 'rowCount'))
+	                ->getMock();
+
+	    $sth->expects($this->once())
+	        ->method('fetch')
+	        ->will($this->returnValue($lieExpected));
+
+	    $sth->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(1));
+
+	    // $sth->expects($this->once())
+	    //     ->method('execute')
+	    //     ->with($this->)
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+	    $db->expects($this->once())
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id, description, date_created, user_id, valid FROM lies WHERE id'))
+	       ->will($this->returnValue($sth));
+
+	    $lieMapper = new LieMapper($db);
+	    $lie = $lieMapper->get($lieExpected->id);
+	    $this->assertEquals($lieExpected, 
+	    					$lie,
+	    					"LieMapper::get() did not return the expected data for existing record");
+	}
+
+
+
+	/**
+	 * 
+	 * @test
+	 */
+	public function returnASingleLieRecordForInvalidRecord() 
+	{
+
+		/*
+			Given a lie entity record,
+			when I call the get(id) method of the LieMapper to get a specific record,
+			if should be able to get a response (false) if the record does not exist.
+
+		 */
+
+	    $sth = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(0));
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+	    $db->expects($this->once())
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id, description, date_created, user_id, valid FROM lies WHERE id'))
+	       ->will($this->returnValue($sth));
+
+	    $lieMapper = new LieMapper($db);
+	    $lie = $lieMapper->get("UNKNOWNID123");
+	    $this->assertEquals(false, 
+	    					$lie,
+	    					"LieMapper::get() did not return the expected data for invalid record");
+	}
+
+	public function testDeleteExistingRecord() 
+	{
+
+		/*
+			Given a lie entity record,
+			check if the record exists
+			if exist, return true
+		 */
+
+
+	    $lie = new LieEntity();
+	    $lie->id = uniqid();
+	    $lie->description = "Sample Lie Entity #1";
+	    $lie->date_created = time();
+	    $lie->user_id = uniqid();
+	    $lie->valid   = 1;
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth1->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(1));
+
+
+	    $sth2 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth2->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(1));
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+
+	    $db->expects($this->at(0))
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id FROM lies WHERE id'))
+	       ->will($this->returnValue($sth1));
+
+	    $db->expects($this->at(1))
+	       ->method('prepare')
+	       ->with($this->stringContains('DELETE FROM lies WHERE id'))
+	       ->will($this->returnValue($sth2));
+
+	     $lieMapper = new LieMapper($db);
+	     $response = $lieMapper->delete($lie->id);
+
+	     $this->assertEquals(true,
+	     				   $response,
+	     				   "LieMapper::delete() did not return the expected result on existing");
+
+	}
+
+
+
+	/**
+	 *
+	 * @test
+	 */
+	public function testDeleteNonExistentRecord() 
+	{
+
+		/*
+			Given a lie entity record,
+			check if the record exists
+			if not exist, return false
+		 */
+
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth1->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(0));
+
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+
+	    $db->expects($this->at(0))
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id FROM lies WHERE id'))
+	       ->will($this->returnValue($sth1));
+
+	     $lieMapper = new LieMapper($db);
+	     $response = $lieMapper->delete("ABCDEF1239232");
+
+	     $this->assertEquals(false,
+	     				   $response,
+	     				   "LieMapper::delete() did not return the expected result on non-existing record");
+
+	}	
+
+
+	/**
+	 *
+	 * @test
+	 */
+	public function testDeleteExistingRecordWithZeroAffectedRecordCount() 
+	{
+
+		/*
+			Given a lie entity record,
+			check if the record exists
+			if exist
+			try to delete
+			and read the rows affected (of the delete)
+			return false if the rows affected is zero
+			otherwise return true
+		 */
+
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth1->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(1));
+
+
+	    $sth2 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth2->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(0));
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+
+	    $db->expects($this->at(0))
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id FROM lies WHERE id'))
+	       ->will($this->returnValue($sth1));
+
+	    $db->expects($this->at(1))
+	       ->method('prepare')
+	       ->with($this->stringContains('DELETE FROM lies WHERE id'))
+	       ->will($this->returnValue($sth2));
+
+
+	     $lieMapper = new LieMapper($db);
+	     $response = $lieMapper->delete("SomeExistingRecordId");
+
+	     $this->assertEquals(false,
+	     				   $response,
+	     				   "LieMapper::delete() did not return the expected result on existing record with rowsaffected zero");
+
+	}	
+
+
+	/**
+	 * 
+	 *  @test
+	 */
+	public function createDuplicateRecord() {
+
+
+	    $entity = new LieEntity();
+	    $entity->id = uniqid();   
+
+
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount', 'fetch'))
+	                ->getMock();
+
+	    $sth1->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(1));
+
+	    $sth1->expects($this->once())
+	        ->method('fetch')
+	        ->will($this->returnValue($entity));
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+
+	    $db->expects($this->at(0))
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id, description, date_created, user_id, valid FROM lies WHERE id'))
+	       ->will($this->returnValue($sth1));
+
+	    $lieMapper = new LieMapper($db);
+	    $response = $lieMapper->create($entity);
+	    $this->assertEquals(false, $response, "LieMapper::create() did not return the expected result when there's an existing record");
+
+	}
+
+
+
+	/**
+	 * 
+	 *  @test
+	 */
+	public function createANewRecord() {
+
+
+	    $entity = new LieEntity();
+	    $entity->id = uniqid();   
+	    $entity->description = "This is a sample Lie";
+	    $entity->date_created = time();
+	    $entity->user_id = uniqid();
+	    $entity->valid = true;
+
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth1 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount', 'fetch'))
+	                ->getMock();
+
+	    $sth1->expects($this->once())
+	        ->method('rowCount')
+	        ->will($this->returnValue(0));
+
+
+
+	    $sth2 = $this->getMockBuilder('stdClass')
+	                ->setMethods(array('execute', 'rowCount'))
+	                ->getMock();
+
+	    $sth2->expects($this->once())
+	         ->method('rowCount')
+	         ->will($this->returnValue(1));
+
+	    $db  = $this->getMockBuilder('PDOMock')
+	                ->setMethods(array('prepare'))
+	                ->getMock();
+
+	    $db->expects($this->at(0))
+	       ->method('prepare')
+	       ->with($this->stringContains('SELECT id, description, date_created, user_id, valid FROM lies WHERE id'))
+	       ->will($this->returnValue($sth1));
+
+		$db->expects($this->at(1))
+		   ->method('prepare')
+		   ->with($this->stringContains('INSERT INTO lies (id, description, date_created, user_id, valid) VALUES'))
+		   ->will($this->returnValue($sth2));
+
+	    $lieMapper = new LieMapper($db);
+	    $response = $lieMapper->create($entity);
+	    $this->assertEquals(true, $response, "LieMapper::create() did not return the expected result adding a new record");
+
+	}	
 
 }
