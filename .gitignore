@@ -5,3 +5,5 @@ build/phpcs.xml
 build/phpdox/
 build/phpmd.xml
 cache.properties
+build/code-browser/
+build/pdepend/
