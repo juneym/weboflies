@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpunit
+  bootstrap="vendor/autoload.php"
+  printerFile="vendor/whatthejeff/nyancat-phpunit-resultprinter/src/NyanCat/PHPUnit/ResultPrinter.php"
+  printerClass="NyanCat\PHPunit\ResultPrinter">
+  <testsuites>
+    <testsuite name="unit">
+       <file>LieMapperTest.php</file>
+       <file>UserMapperTest.php</file>
+    </testsuite>
+ 
+    <testsuite name="integration">
+       <file>LieEntityTest.php</file>
+    </testsuite>
+  </testsuites>
+   
+</phpunit>
