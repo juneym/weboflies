@@ -2,7 +2,7 @@
 
 <project name="Web Of Lies" default="build">
  <target name="build"
-   depends="prepare,lint,phploc,pdepend,phpmd-ci,phpcs-ci,phpcpd,phpunit,phpcb"/>
+   depends="composer-update,prepare,lint,phploc,pdepend,phpmd-ci,phpcs-ci,phpcpd,phpunit,phpcb"/>
 
  <target name="build-parallel"
    depends="prepare,lint,tools-parallel,phpunit,phpcb"/>
@@ -25,6 +25,12 @@
   <delete dir="${basedir}/build/coverage"/>
   <delete dir="${basedir}/build/logs"/>
   <delete dir="${basedir}/build/pdepend"/>
+ </target>
+
+ <target name="composer-update" description="Update all PHP dependencies declared in composer.json">
+    <exec executable="composer">
+      <arg value="update" />
+    </exec>
  </target>
 
  <target name="prepare" depends="clean" description="Prepare for build">
@@ -114,7 +120,7 @@
   <exec executable="phpcpd">
    <arg value="--log-pmd" />
    <arg value="${basedir}/build/logs/pmd-cpd.xml" />
-   <arg path="${basedir}/src" />
+   <arg path="${basedir}" />
   </exec>
  </target>
 
